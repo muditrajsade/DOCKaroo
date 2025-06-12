@@ -30,8 +30,15 @@
       {
         "id": "myView",
         "name": "My View"
+      },
+      {
+
+        "id": "section",
+        "name": "hello world"
+
       }
     ]
+
   }
   
   },
