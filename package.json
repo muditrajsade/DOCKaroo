@@ -21,10 +21,18 @@
         {
         "id": "myExtensionActivityBar",
         "title": "My Extension",
-        "icon": "./media/ab.png"
+        "icon": "media/accessible.svg"
       }
       ]
-    }
+    },
+    "views": {
+    "myExtensionActivityBar": [
+      {
+        "id": "myView",
+        "name": "My View"
+      }
+    ]
+  }
   
   },
   "scripts": {
