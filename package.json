@@ -15,7 +15,17 @@
     "commands": [{
       "command": "DOCKaroo.helloWorld",
       "title": "Hello World"
-    }]
+    }],
+    "viewsContainers": {
+      "activitybar": [
+        {
+        "id": "myExtensionActivityBar",
+        "title": "My Extension",
+        "icon": "./media/ab.png"
+      }
+      ]
+    }
+  
   },
   "scripts": {
     "lint": "eslint .",
@@ -29,5 +39,9 @@
     "eslint": "^9.25.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2"
-  }
+  },
+  "extensionDependencies":[
+    "vscode.git"
+
+  ]
 }
