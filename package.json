@@ -9,7 +9,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:myView"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [{
@@ -29,13 +31,8 @@
     "myExtensionActivityBar": [
       {
         "id": "myView",
-        "name": "My View"
-      },
-      {
-
-        "id": "section",
-        "name": "hello world"
-
+        "name": "My View",
+        "type": "webview"
       }
     ]
 

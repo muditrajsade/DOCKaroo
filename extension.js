@@ -10,25 +10,70 @@ const vscode = require('vscode');
  */
 function activate(context) {
 
+	
+
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "DOCKaroo" is now active!');
+	const provider = {
+    resolveWebviewView : async function (webviewView) {
+		console.log('resolveWebviewView called');
+      webviewView.webview.options = {
+        enableScripts: true,
+      };
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('DOCKaroo.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
+      webviewView.webview.html = getHtml(webviewView.webview);
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Dockaroo!');
-	});
+      webviewView.webview.onDidReceiveMessage((message) => {
+        if (message.command === 'submit') {
+          vscode.window.showInformationMessage(`You entered: ${message.text}`);
+        }
+      });
+    }
+  };
+  console.log("pl");
 
+  const disposable = vscode.window.registerWebviewViewProvider('myView', provider);
 	context.subscriptions.push(disposable);
+
+	
+
+	
 }
 
 // This method is called when your extension is deactivated
 function deactivate() {}
+
+
+function getHtml(webview) {
+
+	
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: sans-serif; padding: 10px; }
+        input, button { margin: 5px 0; width: 100%; }
+      </style>
+    </head>
+    <body>
+      <h3>Input Form</h3>
+      <input type="text" id="input1" placeholder="Enter something..." />
+      <button onclick="submit()">Submit</button>
+
+      <script>
+        const vscode = acquireVsCodeApi();
+        function submit() {
+          const value = document.getElementById('input1').value;
+          vscode.postMessage({ command: 'submit', text: value });
+        }
+      </script>
+    </body>
+    </html>
+  `;
+}
+
 
 module.exports = {
 	activate,
