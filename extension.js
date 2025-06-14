@@ -23,9 +23,23 @@ function activate(context) {
 
       webviewView.webview.html = getHtml(webviewView.webview);
 
-      webviewView.webview.onDidReceiveMessage((message) => {
+      webviewView.webview.onDidReceiveMessage(async (message) => {
         if (message.command === 'submit') {
           vscode.window.showInformationMessage(`You entered: ${message.text}`);
+        }
+        else if(message.command === 'dockerize'){
+          const userInput = await vscode.window.showInputBox({
+          placeHolder: 'Enter your Docker command or parameters',
+          prompt: 'Dockerize what?',
+        });
+
+           if (userInput) {
+      // Tell webview to show loader
+      webviewView.webview.postMessage({ command: 'showLoader' });
+
+      // Simulate async processing (replace with your real code)
+      
+    }
         }
       });
     }
@@ -45,34 +59,57 @@ function deactivate() {}
 
 
 function getHtml(webview) {
-
-	
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8">
+      <meta charset="UTF-8" />
       <style>
         body { font-family: sans-serif; padding: 10px; }
-        input, button { margin: 5px 0; width: 100%; }
+        #loader {
+          display: none;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          animation: spin 1s linear infinite;
+          margin-top: 10px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        button { width: 100%; padding: 10px; margin-top: 10px; }
       </style>
     </head>
     <body>
-      <h3>Input Form</h3>
-      <input type="text" id="input1" placeholder="Enter something..." />
-      <button onclick="submit()">Submit</button>
+      <button id="dockerizeBtn">DOCKERIZE</button>
+      <div id="loader"></div>
 
       <script>
         const vscode = acquireVsCodeApi();
-        function submit() {
-          const value = document.getElementById('input1').value;
-          vscode.postMessage({ command: 'submit', text: value });
-        }
+
+        document.getElementById('dockerizeBtn').addEventListener('click', () => {
+          vscode.postMessage({ command: 'dockerize' });
+        });
+
+        window.addEventListener('message', event => {
+          const message = event.data;
+          const loader = document.getElementById('loader');
+
+          if (message.command === 'showLoader') {
+            loader.style.display = 'inline-block';
+          } else if (message.command === 'hideLoader') {
+            loader.style.display = 'none';
+          }
+        });
       </script>
     </body>
     </html>
   `;
 }
+
 
 
 module.exports = {
