@@ -27,19 +27,62 @@ function activate(context) {
         if (message.command === 'submit') {
           vscode.window.showInformationMessage(`You entered: ${message.text}`);
         }
-        else if(message.command === 'dockerize'){
-          const userInput = await vscode.window.showInputBox({
-          placeHolder: 'Enter your Docker command or parameters',
-          prompt: 'Dockerize what?',
-        });
+        
+          else if (message.command === 'dockerize') {
+            webviewView.webview.postMessage({ command: 'showLoader' });
+  const folderUri = await vscode.window.showOpenDialog({
+    canSelectFolders: true,
+    canSelectFiles: false,
+    canSelectMany: false,
+    openLabel: 'Select folder to dockerize'
+  });
 
-           if (userInput) {
-      // Tell webview to show loader
-      webviewView.webview.postMessage({ command: 'showLoader' });
+  if (!folderUri || folderUri.length === 0) {
+    vscode.window.showWarningMessage('No folder selected.');
+    return;
+  }
 
-      // Simulate async processing (replace with your real code)
-      
-    }
+  
+
+  // Send loader command to webview
+  // Import fs & path if not already done
+  const fs = require('fs');
+  const path = require('path');
+  const selectedFolderPath = folderUri[0].fsPath;
+  const dockerfilePath = path.join(selectedFolderPath, 'Dockerfile');
+
+  // Send loader
+  webviewView.webview.postMessage({ command: 'showLoader' });
+
+  if (fs.existsSync(dockerfilePath)) {
+    // Read the Dockerfile
+    const dockerfileContent = fs.readFileSync(dockerfilePath, 'utf8');
+    const envVarNames = extractAllEnvVarNames(dockerfileContent);
+
+
+
+    // You can send this content to webview or parse/modify it here
+    if (envVarNames.length > 0) {
+    vscode.window.showInformationMessage(`ENV variables: ${envVarNames.join(', ')}`);
+    webviewView.webview.postMessage({ command: 'ENV',Envs : envVarNames });
+
+  } else {
+    vscode.window.showInformationMessage('No ENV variables found in Dockerfile.');
+    webviewView.webview.postMessage({ command: 'hideLoader' });
+  }
+  } else {
+    vscode.window.showWarningMessage('No Dockerfile found in selected folder.');
+    webviewView.webview.postMessage({ command: 'hideLoader' });
+    
+    // Optional: Create one
+    // fs.writeFileSync(dockerfilePath, 'FROM node:18\n# Add your instructions');
+    // vscode.window.showInformationMessage('Dockerfile created.');
+  }
+
+  // Done
+  
+
+
         }
       });
     }
@@ -87,6 +130,10 @@ function getHtml(webview) {
       <button id="dockerizeBtn">DOCKERIZE</button>
       <div id="loader"></div>
 
+      <div id="ENV"></div>
+
+
+
       <script>
         const vscode = acquireVsCodeApi();
 
@@ -103,12 +150,53 @@ function getHtml(webview) {
           } else if (message.command === 'hideLoader') {
             loader.style.display = 'none';
           }
+          else if(message.command ==='ENV'){
+            loader.style.display = 'none';
+            let rgh = message.Envs;
+            for(let jk = 0;jk<rgh.length;jk++){
+
+              let rcv = document.createElement('input');
+              
+            }
+
+
+          }
         });
       </script>
     </body>
     </html>
   `;
 }
+
+
+function extractAllEnvVarNames(dockerfileContent) {
+  const envVarNames = [];
+
+  // Step 1: Join multi-line ENV statements into single lines
+  const joinedContent = dockerfileContent.replace(/\\\s*\n/g, ' ');
+
+  // Step 2: Match all lines that start with ENV
+  const envRegex = /^ENV\s+(.+)$/gm;
+  let match;
+  while ((match = envRegex.exec(joinedContent)) !== null) {
+    const envLine = match[1].trim();
+
+    // Step 3: Extract key=value pairs
+    const pairs = envLine.match(/\S+=\S+/g); // non-whitespace=non-whitespace
+
+    if (pairs) {
+      pairs.forEach(pair => {
+        const [key] = pair.split('=');
+        if (key) {
+          envVarNames.push(key.trim());
+        }
+      });
+    }
+  }
+
+  return envVarNames;
+}
+
 
 
 
