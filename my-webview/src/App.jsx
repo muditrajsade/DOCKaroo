@@ -2,9 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { vscode } from './components/vscode.js';
 import CircularProgress from '@mui/material/CircularProgress';
+import Form from './components/envs.jsx';
 function App() {
 
   let [load,set_load] = useState(0);
+
+  let [s,set_s] = useState([]);
 
   useEffect(()=>{
 
@@ -19,6 +22,13 @@ function App() {
         set_load(0);
       }
 
+      if(msg.command === 'env'){
+        set_load(2);
+
+        set_s([...msg.Envs]);
+
+      }
+
       // handle other command types
     };
 
@@ -27,6 +37,15 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
 
   },[]);
+
+  if(load == 2){
+    return (
+      <div>
+        <Form envs={[...s]}/>
+        
+      </div>
+    );
+  }
 
   if(load == 1){
     return (

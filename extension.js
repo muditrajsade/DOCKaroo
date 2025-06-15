@@ -67,7 +67,7 @@ function activate(context) {
     // You can send this content to webview or parse/modify it here
     if (envVarNames.length > 0) {
     vscode.window.showInformationMessage(`ENV variables: ${envVarNames.join(', ')}`);
-    webviewView.webview.postMessage({ command: 'ENV',Envs : envVarNames });
+    webviewView.webview.postMessage({ command: 'env',Envs : envVarNames });
 
   } else {
     vscode.window.showInformationMessage('No ENV variables found in Dockerfile.');
@@ -87,7 +87,9 @@ function activate(context) {
 
 
         }
-        else if(message.command === 'start'){
+        else if(message.command === 'Build Image'){
+
+          console.log(message.vals);
 
 
 
