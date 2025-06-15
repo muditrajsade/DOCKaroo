@@ -40,10 +40,14 @@
   
   },
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
-  },
+  "lint": "eslint .",
+  "pretest": "npm run lint",
+  "test": "vscode-test",
+  
+  "build-react": "cd my-webview && npm run build",
+  
+  "pretest": "npm run build-react && npm run lint"
+},
   "devDependencies": {
     "@types/vscode": "^1.100.0",
     "@types/mocha": "^10.0.10",

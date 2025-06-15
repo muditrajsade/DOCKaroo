@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 
+const fs = require('fs');          // ✅ Add this
+const path = require('path'); 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 
@@ -17,11 +19,16 @@ function activate(context) {
 	const provider = {
     resolveWebviewView : async function (webviewView) {
 		console.log('resolveWebviewView called');
-      webviewView.webview.options = {
-        enableScripts: true,
-      };
+     webviewView.webview.options = {
+  enableScripts: true,
+  localResourceRoots: [
+    vscode.Uri.joinPath(context.extensionUri, 'my-webview', 'dist'),
+    vscode.Uri.joinPath(context.extensionUri, 'images'),  // add your images folder here
+  ]
+};
 
-      webviewView.webview.html = getHtml(webviewView.webview);
+
+      webviewView.webview.html = getHtml(webviewView.webview, context);
 
       webviewView.webview.onDidReceiveMessage(async (message) => {
         if (message.command === 'submit') {
@@ -84,6 +91,11 @@ function activate(context) {
 
 
         }
+        else if(message.command === 'start'){
+
+
+
+        }
       });
     }
   };
@@ -100,74 +112,30 @@ function activate(context) {
 // This method is called when your extension is deactivated
 function deactivate() {}
 
+function getHtml(webview, context) {
+  const reactDist = vscode.Uri.joinPath(context.extensionUri, 'my-webview', 'dist');
+  const indexHtmlPath = vscode.Uri.joinPath(reactDist, 'index.html');
+  let html = fs.readFileSync(indexHtmlPath.fsPath, 'utf8');
 
-function getHtml(webview) {
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <style>
-        body { font-family: sans-serif; padding: 10px; }
-        #loader {
-          display: none;
-          border: 4px solid #f3f3f3;
-          border-top: 4px solid #3498db;
-          border-radius: 50%;
-          width: 30px;
-          height: 30px;
-          animation: spin 1s linear infinite;
-          margin-top: 10px;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        button { width: 100%; padding: 10px; margin-top: 10px; }
-      </style>
-    </head>
-    <body>
-      <button id="dockerizeBtn">DOCKERIZE</button>
-      <div id="loader"></div>
+  // Get URI for image outside my-webview
+  const imagePathOnDisk = vscode.Uri.joinPath(context.extensionUri, 'images', 'vite.svg');
+  const imageWebviewUri = webview.asWebviewUri(imagePathOnDisk);
 
-      <div id="ENV"></div>
+  // Inject the image URI as a global variable or replace a placeholder
+  html = html.replace('${externalImageUri}', imageWebviewUri.toString());
 
+  // Also fix all other asset paths inside dist like CSS/JS/images to webview URIs
+  html = html.replace(/(src|href)="(.+?)"/g, (_, attr, src) => {
+    if (src.startsWith('http') || src.startsWith('data:')) {
+      return `${attr}="${src}"`; // Ignore external URLs or data URLs
+    }
+    const assetUri = vscode.Uri.joinPath(reactDist, src);
+    const assetWebviewUri = webview.asWebviewUri(assetUri);
+    return `${attr}="${assetWebviewUri}"`;
+  });
 
-
-      <script>
-        const vscode = acquireVsCodeApi();
-
-        document.getElementById('dockerizeBtn').addEventListener('click', () => {
-          vscode.postMessage({ command: 'dockerize' });
-        });
-
-        window.addEventListener('message', event => {
-          const message = event.data;
-          const loader = document.getElementById('loader');
-
-          if (message.command === 'showLoader') {
-            loader.style.display = 'inline-block';
-          } else if (message.command === 'hideLoader') {
-            loader.style.display = 'none';
-          }
-          else if(message.command ==='ENV'){
-            loader.style.display = 'none';
-            let rgh = message.Envs;
-            for(let jk = 0;jk<rgh.length;jk++){
-
-              let rcv = document.createElement('input');
-              
-            }
-
-
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `;
+  return html;
 }
-
 
 function extractAllEnvVarNames(dockerfileContent) {
   const envVarNames = [];
