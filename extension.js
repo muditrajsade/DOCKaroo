@@ -20,11 +20,7 @@ function activate(context) {
     resolveWebviewView : async function (webviewView) {
 		console.log('resolveWebviewView called');
      webviewView.webview.options = {
-  enableScripts: true,
-  localResourceRoots: [
-    vscode.Uri.joinPath(context.extensionUri, 'my-webview', 'dist'),
-    vscode.Uri.joinPath(context.extensionUri, 'images'),  // add your images folder here
-  ]
+  enableScripts: true
 };
 
 
@@ -118,11 +114,7 @@ function getHtml(webview, context) {
   let html = fs.readFileSync(indexHtmlPath.fsPath, 'utf8');
 
   // Get URI for image outside my-webview
-  const imagePathOnDisk = vscode.Uri.joinPath(context.extensionUri, 'images', 'vite.svg');
-  const imageWebviewUri = webview.asWebviewUri(imagePathOnDisk);
-
-  // Inject the image URI as a global variable or replace a placeholder
-  html = html.replace('${externalImageUri}', imageWebviewUri.toString());
+ 
 
   // Also fix all other asset paths inside dist like CSS/JS/images to webview URIs
   html = html.replace(/(src|href)="(.+?)"/g, (_, attr, src) => {
