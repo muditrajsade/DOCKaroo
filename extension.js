@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
-
+const { exec } = require('child_process');
 const fs = require('fs');          // ✅ Add this
 const path = require('path'); 
 // This method is called when your extension is activated
@@ -12,6 +12,8 @@ const path = require('path');
  */
 function activate(context) {
 
+    let selectedFolderPath="";
+    let envVarNames = [];
 	
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
@@ -51,7 +53,7 @@ function activate(context) {
   // Import fs & path if not already done
   const fs = require('fs');
   const path = require('path');
-  const selectedFolderPath = folderUri[0].fsPath;
+  selectedFolderPath = folderUri[0].fsPath;
   const dockerfilePath = path.join(selectedFolderPath, 'Dockerfile');
 
   // Send loader
@@ -60,7 +62,7 @@ function activate(context) {
   if (fs.existsSync(dockerfilePath)) {
     // Read the Dockerfile
     const dockerfileContent = fs.readFileSync(dockerfilePath, 'utf8');
-    const envVarNames = extractAllEnvVarNames(dockerfileContent);
+    envVarNames = extractAllEnvVarNames(dockerfileContent);
 
 
 
@@ -87,13 +89,66 @@ function activate(context) {
 
 
         }
-        else if(message.command === 'Build Image'){
+        else if (message.command === 'Build Image') {
+          
 
-          console.log(message.vals);
+// Assuming env_var_names = ['VAR1', 'VAR2']
+// and message.vals = ['value1', 'value2']
+let env_var_names = envVarNames;
+let Envs = message.vals;
+
+const folderPath = selectedFolderPath;
+if (!folderPath) {
+  vscode.window.showErrorMessage('Folder path is missing.');
+  return;
+}
+
+const imageName = path.basename(folderPath); // Use folder name as image name
+
+vscode.window.withProgress({
+  location: vscode.ProgressLocation.Notification,
+  title: `Building Docker image: ${imageName}`,
+  cancellable: false
+}, async (progress) => {
+  return new Promise((resolve, reject) => {
+    exec(`docker build -t ${imageName} "${folderPath}"`, (error, stdout, stderr) => {
+      if (error) {
+        vscode.window.showErrorMessage(`Docker build failed: ${stderr}`);
+        reject();
+      } else {
+        vscode.window.showInformationMessage(`Docker image '${imageName}' built successfully!`);
+        
+        // Now construct ENV options for docker run
+        const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
+
+        const containerName = `${imageName}-container`;
+
+        // Optional: stop and remove existing container with same name
+        exec(`docker rm -f ${containerName}`, () => {
+          // Ignore error in case it doesn't exist
+
+          // Now run the container
+          exec(`docker run -d --name ${containerName} ${envString} ${imageName}`, (runErr, runOut, runErrOut) => {
+            if (runErr) {
+              vscode.window.showErrorMessage(`Docker run failed: ${runErrOut || runErr.message}`);
+              reject();
+            } else {
+              vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully.`);
+              resolve();
+            }
+          });
+        });
+      }
+    });
+  });
+});
 
 
 
-        }
+
+
+}
+
       });
     }
   };
