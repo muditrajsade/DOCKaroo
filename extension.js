@@ -90,11 +90,8 @@ function activate(context) {
 
         }
         else if (message.command === 'Build Image') {
-          
 
-// Assuming env_var_names = ['VAR1', 'VAR2']
-// and message.vals = ['value1', 'value2']
-let env_var_names = envVarNames;
+          let env_var_names = envVarNames;
 let Envs = message.vals;
 
 const folderPath = selectedFolderPath;
@@ -104,6 +101,41 @@ if (!folderPath) {
 }
 
 const imageName = path.basename(folderPath); // Use folder name as image name
+
+// Prompt for container folder path to mount
+const containerFolderPath = await vscode.window.showInputBox({
+  prompt: 'Enter the folder path inside the container to mount to (e.g., /app)',
+  ignoreFocusOut: true
+});
+
+if (!containerFolderPath) {
+  vscode.window.showErrorMessage('Container path is required.');
+  return;
+}
+
+// Prompt for host port
+const hostPort = await vscode.window.showInputBox({
+  prompt: 'Enter the host port to bind (e.g., 3000)',
+  validateInput: val => isNaN(val) ? 'Must be a number' : null,
+  ignoreFocusOut: true
+});
+
+if (!hostPort) {
+  vscode.window.showErrorMessage('Host port is required.');
+  return;
+}
+
+// Prompt for container port
+const containerPort = await vscode.window.showInputBox({
+  prompt: 'Enter the container port to bind (e.g., 5000)',
+  validateInput: val => isNaN(val) ? 'Must be a number' : null,
+  ignoreFocusOut: true
+});
+
+if (!containerPort) {
+  vscode.window.showErrorMessage('Container port is required.');
+  return;
+}
 
 vscode.window.withProgress({
   location: vscode.ProgressLocation.Notification,
@@ -118,22 +150,28 @@ vscode.window.withProgress({
       } else {
         vscode.window.showInformationMessage(`Docker image '${imageName}' built successfully!`);
         
-        // Now construct ENV options for docker run
+        // ENV vars
         const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
 
         const containerName = `${imageName}-container`;
 
-        // Optional: stop and remove existing container with same name
+        // Remove existing container with same name (optional)
         exec(`docker rm -f ${containerName}`, () => {
-          // Ignore error in case it doesn't exist
+          // Build docker run command with:
+          // - volume mounting
+          // - port binding
+          // - env variables
+          const runCommand = `docker run -d --name ${containerName} ` +
+            `-v "${folderPath}":"${containerFolderPath}" ` +
+            `-p ${hostPort}:${containerPort} ` +
+            `${envString} ${imageName}`;
 
-          // Now run the container
-          exec(`docker run -d --name ${containerName} ${envString} ${imageName}`, (runErr, runOut, runErrOut) => {
+          exec(runCommand, (runErr, runOut, runErrOut) => {
             if (runErr) {
               vscode.window.showErrorMessage(`Docker run failed: ${runErrOut || runErr.message}`);
               reject();
             } else {
-              vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully.`);
+              vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully with port binding and mounted volume.`);
               resolve();
             }
           });
@@ -147,7 +185,9 @@ vscode.window.withProgress({
 
 
 
-}
+
+
+  }
 
       });
     }
