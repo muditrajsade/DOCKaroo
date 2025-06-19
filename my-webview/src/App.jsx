@@ -3,11 +3,16 @@ import React, { useEffect, useState } from 'react';
 import { vscode } from './components/vscode.js';
 import CircularProgress from '@mui/material/CircularProgress';
 import Form from './components/envs.jsx';
+import W from './components/workspace.jsx';
 function App() {
 
   let [load,set_load] = useState(0);
 
   let [s,set_s] = useState([]);
+
+  let [container_name ,set_container_name] = useState('');
+
+  let [i,set_i] = useState(0);
 
   useEffect(()=>{
 
@@ -29,6 +34,12 @@ function App() {
 
       }
 
+      if(msg.command === 'display'){
+        set_load(3);
+        set_container_name(msg.cont_name);
+        set_i(msg.i);
+      }
+
       // handle other command types
     };
 
@@ -37,6 +48,19 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
 
   },[]);
+
+
+  if(load == 3){
+    return (
+      <div>
+
+        <W containername={container_name} i={i}/>
+
+      
+
+      </div>
+    );
+  }
 
   if(load == 2){
     return (

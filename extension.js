@@ -1,3 +1,4 @@
+// @ts-nocheck
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
@@ -12,8 +13,7 @@ const path = require('path');
  */
 function activate(context) {
 
-    let selectedFolderPath="";
-    let envVarNames = [];
+    
 	
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
@@ -25,8 +25,39 @@ function activate(context) {
   enableScripts: true
 };
 
+//context.workspaceState.update(key, value);
 
-      webviewView.webview.html = getHtml(webviewView.webview, context);
+
+   let containerName = context.workspaceState.get('containerName', '');
+  let envVarNames = context.workspaceState.get('envVars', []);
+  let selectedFolderPath = context.workspaceState.get('selectedFolderPath', '');
+  let i = context.workspaceState.get('containerStatus', 1);
+  let ui_status = context.workspaceState.get('ui_status',-1);
+
+  console.log(ui_status);
+
+  if(ui_status === 1){
+
+    webviewView.webview.postMessage({
+  command: 'env',
+  Envs : envVarNames
+
+});
+    
+  }
+
+  else if(ui_status === 2){
+
+    webviewView.webview.postMessage({ command: 'display', cont_name : containerName ,v:i });
+
+  }
+
+
+
+      
+  else{
+
+    webviewView.webview.html = getHtml(webviewView.webview, context);
 
       webviewView.webview.onDidReceiveMessage(async (message) => {
         if (message.command === 'submit') {
@@ -69,10 +100,16 @@ function activate(context) {
     // You can send this content to webview or parse/modify it here
     if (envVarNames.length > 0) {
     vscode.window.showInformationMessage(`ENV variables: ${envVarNames.join(', ')}`);
+    context.workspaceState.update('envVars', envVarNames);
+    context.workspaceState.update('ui_status', 1);
+    context.workspaceState.update('selectedFolderPath',selectedFolderPath);
     webviewView.webview.postMessage({ command: 'env',Envs : envVarNames });
 
   } else {
     vscode.window.showInformationMessage('No ENV variables found in Dockerfile.');
+    context.workspaceState.update('envVars', envVarNames);
+    context.workspaceState.update('ui_status', 1);
+    context.workspaceState.update('selectedFolderPath',selectedFolderPath);
     webviewView.webview.postMessage({ command: 'hideLoader' });
   }
   } else {
@@ -90,6 +127,8 @@ function activate(context) {
 
         }
         else if (message.command === 'Build Image') {
+
+          webviewView.webview.postMessage({ command: 'showLoader' });
 
           let env_var_names = envVarNames;
 let Envs = message.vals;
@@ -172,6 +211,12 @@ vscode.window.withProgress({
               reject();
             } else {
               vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully with port binding and mounted volume.`);
+
+              context.workspaceState.update('ui_status', 2);
+              context.workspaceState.update('containerName',containerName);
+
+
+              webviewView.webview.postMessage({ command: 'display', cont_name : containerName ,v:i });
               resolve();
             }
           });
@@ -190,6 +235,7 @@ vscode.window.withProgress({
   }
 
       });
+  }
     }
   };
   console.log("pl");
