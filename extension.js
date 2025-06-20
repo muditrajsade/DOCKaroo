@@ -27,6 +27,8 @@ function activate(context) {
 
 //context.workspaceState.update(key, value);
 
+  webviewView.webview.html = getHtml(webviewView.webview, context);
+
 
    let containerName = context.workspaceState.get('containerName', '');
   let envVarNames = context.workspaceState.get('envVars', []);
@@ -34,30 +36,16 @@ function activate(context) {
   let i = context.workspaceState.get('containerStatus', 1);
   let ui_status = context.workspaceState.get('ui_status',-1);
 
-  console.log(ui_status);
+  //console.log(ui_status);
 
-  if(ui_status === 1){
-
-    webviewView.webview.postMessage({
-  command: 'env',
-  Envs : envVarNames
-
-});
-    
-  }
-
-  else if(ui_status === 2){
-
-    webviewView.webview.postMessage({ command: 'display', cont_name : containerName ,v:i });
-
-  }
+  
 
 
 
       
-  else{
 
-    webviewView.webview.html = getHtml(webviewView.webview, context);
+
+    
 
       webviewView.webview.onDidReceiveMessage(async (message) => {
         if (message.command === 'submit') {
@@ -234,8 +222,20 @@ vscode.window.withProgress({
 
   }
 
+  else if(message.command === 'status'){
+
+        webviewView.webview.postMessage({
+        command: 'restoreState',
+        containerName,
+        envVarNames,
+        selectedFolderPath,
+        i,
+        ui_status
       });
   }
+
+      });
+  
     }
   };
   console.log("pl");

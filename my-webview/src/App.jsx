@@ -16,6 +16,12 @@ function App() {
 
   useEffect(()=>{
 
+
+      vscode.postMessage({
+      command: 'status'
+    });
+
+
     const handleMessage = (event) => {
       const msg = event.data;
 
@@ -38,6 +44,26 @@ function App() {
         set_load(3);
         set_container_name(msg.cont_name);
         set_i(msg.i);
+      }
+
+      if(msg.command === 'restoreState' ){
+        if(msg.ui_status === 1){
+
+          set_load(2);
+
+          set_s([...msg.envVarNames]);
+
+
+
+        }
+
+        if(msg.ui_status === 2){
+
+          set_load(3);
+          set_container_name(msg.containerName);
+          set_i(msg.i);
+
+        }
       }
 
       // handle other command types
