@@ -30,12 +30,11 @@ function activate(context) {
   webviewView.webview.html = getHtml(webviewView.webview, context);
 
 
-   let containerName = context.workspaceState.get('containerName', '');
-  let envVarNames = context.workspaceState.get('envVars', []);
-  let selectedFolderPath = context.workspaceState.get('selectedFolderPath', '');
-  let i = context.workspaceState.get('containerStatus', 1);
-  let ui_status = context.workspaceState.get('ui_status',-1);
-
+   let containerName = '';
+  let envVarNames = [];
+  let selectedFolderPath = '';
+  let i = 1;
+  let ui_status = -1;
   //console.log(ui_status);
 
   
@@ -88,16 +87,16 @@ function activate(context) {
     // You can send this content to webview or parse/modify it here
     if (envVarNames.length > 0) {
     vscode.window.showInformationMessage(`ENV variables: ${envVarNames.join(', ')}`);
-    context.workspaceState.update('envVars', envVarNames);
-    context.workspaceState.update('ui_status', 1);
-    context.workspaceState.update('selectedFolderPath',selectedFolderPath);
+
+    ui_status=1;
+    
     webviewView.webview.postMessage({ command: 'env',Envs : envVarNames });
 
   } else {
     vscode.window.showInformationMessage('No ENV variables found in Dockerfile.');
-    context.workspaceState.update('envVars', envVarNames);
-    context.workspaceState.update('ui_status', 1);
-    context.workspaceState.update('selectedFolderPath',selectedFolderPath);
+    ui_status = 1;
+    
+    
     webviewView.webview.postMessage({ command: 'hideLoader' });
   }
   } else {
@@ -180,7 +179,7 @@ vscode.window.withProgress({
         // ENV vars
         const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
 
-        const containerName = `${imageName}-container`;
+        containerName = `${imageName}-container`;
 
         // Remove existing container with same name (optional)
         exec(`docker rm -f ${containerName}`, () => {
@@ -199,9 +198,9 @@ vscode.window.withProgress({
               reject();
             } else {
               vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully with port binding and mounted volume.`);
-
-              context.workspaceState.update('ui_status', 2);
-              context.workspaceState.update('containerName',containerName);
+              ui_status=2;
+              i=1;
+              
 
 
               webviewView.webview.postMessage({ command: 'display', cont_name : containerName ,v:i });
@@ -233,6 +232,57 @@ vscode.window.withProgress({
         ui_status
       });
   }
+
+  else if (message.command === 'installLibrary') {
+  if (!containerName) {
+    console.log(containerName);
+    vscode.window.showErrorMessage('Container not running or container name missing.');
+    return;
+  }
+
+  const installCommand = await vscode.window.showInputBox({
+    prompt: 'Enter the full install command (e.g., npm install axios)',
+    ignoreFocusOut: true,
+    placeHolder: 'npm install axios',
+    validateInput: (value) => {
+      return value.trim() === '' ? 'Command cannot be empty' : null;
+    }
+  });
+
+  if (!installCommand) {
+    vscode.window.showWarningMessage('No install command entered.');
+    return;
+  }
+
+  vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: `Running install command in container: ${installCommand}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker exec ${containerName} sh -c "${installCommand}"`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Command failed: ${stderr || error.message}`);
+          webviewView.webview.postMessage({
+            command: 'installResult',
+            success: false,
+            output: stderr || error.message
+          });
+          reject();
+        } else {
+          vscode.window.showInformationMessage('Library installed successfully!');
+          webviewView.webview.postMessage({
+            command: 'installResult',
+            success: true,
+            output: stdout
+          });
+          resolve();
+        }
+      });
+    });
+  });
+}
+
 
       });
   
