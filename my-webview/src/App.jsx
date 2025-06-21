@@ -4,6 +4,9 @@ import { vscode } from './components/vscode.js';
 import CircularProgress from '@mui/material/CircularProgress';
 import Form from './components/envs.jsx';
 import W from './components/workspace.jsx';
+import { motion } from 'framer-motion';
+
+import './App.css';
 function App() {
 
   let [load,set_load] = useState(0);
@@ -43,7 +46,7 @@ function App() {
       if(msg.command === 'display'){
         set_load(3);
         set_container_name(msg.cont_name);
-        set_i(msg.i);
+        set_i(msg.v);
       }
 
       if(msg.command === 'restoreState' ){
@@ -72,7 +75,7 @@ function App() {
       if(msg.command == 'containerStopResult'){
         set_load(3);
         set_container_name(msg.cont_name);
-        set_i(msg.i);
+        set_i(msg.v);
       }
 
       // handle other command types
@@ -116,17 +119,28 @@ function App() {
   
 
   return (
-    <div>
-     
-      <button onClick={()=>{
+  <div className="center-wrapper">
+    {/* Rotating background box */}
+    <motion.div
+      className="rotating-box"
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+    />
 
-         vscode.postMessage({
-      command: 'dockerize'
-    });
-
-      }}>Dockerize</button>
+    {/* Non-rotating button placed above */}
+    <div className="button-on-top">
+      <button
+        className="fancy-button"
+        onClick={() => {
+          vscode.postMessage({ command: "dockerize" });
+        }}
+      >
+        Dockerize
+      </button>
     </div>
-  );
+  </div>
+);
+
 }
 
 export default App;
