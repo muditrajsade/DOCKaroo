@@ -12,9 +12,15 @@ function W({containername,i}){
 
                 <p>{containername}</p>
 
-                <button>RUN</button>
+                <button onClick={()=>{
 
-                <button>STOP</button>
+                    vscode.postMessage({
+                      command: 'run_container'
+                    });
+
+                }}>RUN</button>
+
+                
 
 
             </div>
@@ -27,7 +33,11 @@ function W({containername,i}){
 
             <p>RUNNING</p>
 
-            <button>STOP</button>
+            <button onClick={()=>{
+                vscode.postMessage({
+                      command: 'stop_container'
+                    });
+            }} >STOP</button>
 
             <button onClick={()=>{
                 vscode.postMessage({

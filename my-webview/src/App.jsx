@@ -64,6 +64,15 @@ function App() {
           set_i(msg.i);
 
         }
+
+
+      }
+
+
+      if(msg.command == 'containerStopResult'){
+        set_load(3);
+        set_container_name(msg.cont_name);
+        set_i(msg.i);
       }
 
       // handle other command types

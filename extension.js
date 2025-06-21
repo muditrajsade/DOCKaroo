@@ -283,6 +283,91 @@ vscode.window.withProgress({
   });
 }
 
+else if (message.command === 'stop_container') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No running container to stop.');
+    return;
+  }
+
+  webviewView.webview.postMessage({ command: 'showLoader' });
+
+  vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: `Stopping Docker container: ${containerName}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker stop ${containerName}`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Failed to stop container: ${stderr || error.message}`);
+          webviewView.webview.postMessage({
+            command: 'containerStopResult',
+            success: false,
+            output: stderr || error.message
+          });
+          reject();
+        } else {
+          vscode.window.showInformationMessage(`Container '${containerName}' stopped successfully.`);
+          ui_status=2;
+          i=0;
+
+          
+
+         
+          webviewView.webview.postMessage({
+            command: 'containerStopResult',
+            cont_name : containerName ,
+            v:i 
+            
+          });
+          resolve();
+        }
+      });
+    });
+  });
+}
+
+else if (message.command === 'run_container') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No container name found to start.');
+    return;
+  }
+  webviewView.webview.postMessage({ command: 'showLoader' });
+
+
+  vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: `Starting existing container: ${containerName}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker start ${containerName}`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Failed to start container: ${stderr || error.message}`);
+          webviewView.webview.postMessage({
+            command: 'containerRunResult',
+            success: false,
+            output: stderr || error.message
+          });
+          reject();
+        } else {
+          vscode.window.showInformationMessage(`Container '${containerName}' started.`);
+          ui_status = 2;
+          i = 1;
+
+          webviewView.webview.postMessage({
+            command: 'display',
+            cont_name: containerName,
+            v: i
+          });
+          resolve();
+        }
+      });
+    });
+  });
+}
+
+
 
       });
   
