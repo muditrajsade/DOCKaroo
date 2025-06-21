@@ -1,0 +1,29 @@
+.container-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  align-items: flex-start;
+}
+
+.blue-text {
+  color: #1976d2;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.blue-button {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.blue-button:hover {
+  background-color: #125ca1;
+}

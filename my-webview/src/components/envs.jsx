@@ -4,6 +4,8 @@ import React from "react";
 import { useState,useEffect } from "react";
 import { vscode } from './vscode.js';
 
+import './envs.css';
+
 function Form({envs}){
 
     let lst = [];
@@ -16,52 +18,41 @@ function Form({envs}){
 
     }
 
-    
-    
-
-
-
-    
-
     return (
-        <div>
-
-            {
-                [...envs].map((index,value)=>{
-
-                    return (
-                        <div>
-
-                            <input placeholder={index} accessKey={value} onChange={(e)=>{
-                                let ib = lst;
-                                console.log(e.target.value);
-                                ib[value] = e.target.value;
-                            }} />
-                        </div>
-                    );
-
-                })
-            }
-
-            <button onClick={()=>{
-            
-                     vscode.postMessage({
-                  command: 'Build Image',
-                  vals: [...lst]
-                });
-
-               
-
-                
-                            
-             }}
-             
-             >CLICK</button>
-
-
-
+  <div className="form-container">
+    {[...envs].map((index, value) => {
+      return (
+        <div className="input-wrapper" key={value}>
+          <input
+            className="styled-input"
+            placeholder={index}
+            accessKey={value}
+            onChange={(e) => {
+              let ib = lst;
+              ib[value] = e.target.value;
+              console.log(e.target.value);
+            }}
+          />
         </div>
-    );
+      );
+    })}
+
+    <button
+      className="styled-button"
+      onClick={() => {
+        vscode.postMessage({
+          command: "Build Image",
+          vals: [...lst],
+        });
+      }}
+    >
+      CLICK
+    </button>
+  </div>
+);
+
+    
+
 }
 
 
