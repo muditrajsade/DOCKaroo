@@ -3,6 +3,7 @@
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');          // ✅ Add this
 const path = require('path'); 
 // This method is called when your extension is activated
@@ -128,90 +129,160 @@ if (!folderPath) {
 
 const imageName = path.basename(folderPath); // Use folder name as image name
 
-// Prompt for container folder path to mount
-const containerFolderPath = await vscode.window.showInputBox({
-  prompt: 'Enter the folder path inside the container to mount to (e.g., /app)',
-  ignoreFocusOut: true
-});
 
-if (!containerFolderPath) {
-  vscode.window.showErrorMessage('Container path is required.');
-  return;
-}
 
-// Prompt for host port
-const hostPort = await vscode.window.showInputBox({
-  prompt: 'Enter the host port to bind (e.g., 3000)',
-  validateInput: val => isNaN(val) ? 'Must be a number' : null,
-  ignoreFocusOut: true
-});
 
-if (!hostPort) {
-  vscode.window.showErrorMessage('Host port is required.');
-  return;
-}
 
 // Prompt for container port
-const containerPort = await vscode.window.showInputBox({
-  prompt: 'Enter the container port to bind (e.g., 5000)',
-  validateInput: val => isNaN(val) ? 'Must be a number' : null,
-  ignoreFocusOut: true
-});
 
-if (!containerPort) {
-  vscode.window.showErrorMessage('Container port is required.');
-  return;
-}
+
+console.log(folderPath);
 
 vscode.window.withProgress({
-  location: vscode.ProgressLocation.Notification,
-  title: `Building Docker image: ${imageName}`,
-  cancellable: false
-}, async (progress) => {
-  return new Promise((resolve, reject) => {
-    exec(`docker build -t ${imageName} "${folderPath}"`, (error, stdout, stderr) => {
-      if (error) {
-        vscode.window.showErrorMessage(`Docker build failed: ${stderr}`);
-        reject();
-      } else {
+    location: vscode.ProgressLocation.Notification,
+    title: `Building Docker image: ${imageName}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker build -t ${imageName} .`, { cwd: selectedFolderPath }, async (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Docker build failed: ${stderr}`);
+          reject();
+          return;
+        }
+
         vscode.window.showInformationMessage(`Docker image '${imageName}' built successfully!`);
-        
-        // ENV vars
-        const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
 
-        containerName = `${imageName}-container`;
-
-        // Remove existing container with same name (optional)
-        exec(`docker rm -f ${containerName}`, () => {
-          // Build docker run command with:
-          // - volume mounting
-          // - port binding
-          // - env variables
-          const runCommand = `docker run -d --name ${containerName} ` +
-            `-v "${folderPath}":"${containerFolderPath}" ` +
-            `-p ${hostPort}:${containerPort} ` +
-            `${envString} ${imageName}`;
-
-          exec(runCommand, (runErr, runOut, runErrOut) => {
-            if (runErr) {
-              vscode.window.showErrorMessage(`Docker run failed: ${runErrOut || runErr.message}`);
-              reject();
-            } else {
-              vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully with port binding and mounted volume.`);
-              ui_status=2;
-              i=1;
-              
-
-
-              webviewView.webview.postMessage({ command: 'display', cont_name : containerName ,v:i });
-              resolve();
-            }
-          });
+        // Prompt project type
+        const projectType = await vscode.window.showQuickPick(['Node.js', 'Python'], {
+          placeHolder: 'Select project type'
         });
-      }
+
+        if (!projectType) {
+          vscode.window.showWarningMessage('No project type selected. Running container without volume mounts.');
+          runContainerBasic();
+          resolve();
+          return;
+        }
+
+        // Prompt container folder path to mount
+        const containerFolderPath = await vscode.window.showInputBox({
+          prompt: 'Enter the folder path inside the container to mount to (e.g., /app)',
+          ignoreFocusOut: true
+        });
+
+        if (!containerFolderPath) {
+          vscode.window.showErrorMessage('Container path is required.');
+          reject();
+          return;
+        }
+
+        // Prompt host port
+        const hostPort = await vscode.window.showInputBox({
+          prompt: 'Enter the host port to bind (e.g., 3000)',
+          validateInput: val => isNaN(val) ? 'Must be a number' : null,
+          ignoreFocusOut: true
+        });
+
+        if (!hostPort) {
+          vscode.window.showErrorMessage('Host port is required.');
+          reject();
+          return;
+        }
+
+        // Prompt container port
+        const containerPort = await vscode.window.showInputBox({
+          prompt: 'Enter the container port to bind (e.g., 5000)',
+          validateInput: val => isNaN(val) ? 'Must be a number' : null,
+          ignoreFocusOut: true
+        });
+
+        if (!containerPort) {
+          vscode.window.showErrorMessage('Container port is required.');
+          reject();
+          return;
+        }
+
+        // Function to run container without extra volume for node_modules
+        function runContainerBasic() {
+          containerName = `${imageName}-container`;
+          exec(`docker rm -f ${containerName}`, () => {
+            const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
+            const runCommand = `docker run -d --name ${containerName} ` +
+              `-v "${folderPath}":"${containerFolderPath}" ` +
+              `-p ${hostPort}:${containerPort} ` +
+              `${envString} ${imageName}`;
+
+            exec(runCommand, (runErr, runOut, runErrOut) => {
+              if (runErr) {
+                vscode.window.showErrorMessage(`Docker run failed: ${runErrOut || runErr.message}`);
+                reject();
+              } else {
+                vscode.window.showInformationMessage(`Docker container '${containerName}' started successfully.`);
+                ui_status = 2;
+                i = 1;
+                webviewView.webview.postMessage({ command: 'display', cont_name: containerName, v: i });
+                resolve();
+              }
+            });
+          });
+        }
+
+        if (projectType === 'Node.js') {
+          // Prompt volume name for node_modules
+          const volumeName = await vscode.window.showInputBox({
+            prompt: 'Enter a Docker volume name for node_modules',
+            ignoreFocusOut: true,
+            placeHolder: 'my_node_modules_volume',
+            validateInput: val => val.trim() === '' ? 'Volume name cannot be empty' : null
+          });
+
+          if (!volumeName) {
+            vscode.window.showWarningMessage('No volume name provided. Running container without node_modules volume.');
+            runContainerBasic();
+            resolve();
+            return;
+          }
+
+          // Create docker volume
+          exec(`docker volume create ${volumeName}`, (volErr, volStdout, volStderr) => {
+            if (volErr) {
+              vscode.window.showErrorMessage(`Failed to create volume: ${volStderr || volErr.message}`);
+              reject();
+              return;
+            }
+
+            containerName = `${imageName}-container`;
+            exec(`docker rm -f ${containerName}`, () => {
+              const envString = env_var_names.map((key, i) => `-e ${key}=${Envs[i]}`).join(' ');
+              // Run container with two mounts: local folder and volume for node_modules
+              const runCommand = `docker run -d --name ${containerName} ` +
+                `-v "${folderPath}":"${containerFolderPath}" ` +
+                `-v ${volumeName}:"${path.posix.join(containerFolderPath, 'node_modules')}" ` +
+                `-p ${hostPort}:${containerPort} ` +
+                `${envString} ${imageName}`;
+
+              exec(runCommand, (runErr, runOut, runErrOut) => {
+                if (runErr) {
+                  vscode.window.showErrorMessage(`Docker run failed: ${runErrOut || runErr.message}`);
+                  reject();
+                } else {
+                  vscode.window.showInformationMessage(`Docker container '${containerName}' started with node_modules volume '${volumeName}'.`);
+                  ui_status = 2;
+                  i = 1;
+                  webviewView.webview.postMessage({ command: 'display', cont_name: containerName, v: i });
+                  resolve();
+                }
+              });
+            });
+          });
+        } else {
+          // For Python or others, just run container normally
+          runContainerBasic();
+        }
+      });
     });
   });
-});
 
 
 
