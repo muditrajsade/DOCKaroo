@@ -36,6 +36,7 @@ function activate(context) {
   let selectedFolderPath = '';
   let i = 1;
   let ui_status = -1;
+  let projectType = '';
   //console.log(ui_status);
 
   
@@ -154,7 +155,7 @@ vscode.window.withProgress({
         vscode.window.showInformationMessage(`Docker image '${imageName}' built successfully!`);
 
         // Prompt project type
-        const projectType = await vscode.window.showQuickPick(['Node.js', 'Python'], {
+        projectType = await vscode.window.showQuickPick(['Node.js', 'Python'], {
           placeHolder: 'Select project type'
         });
 
@@ -326,32 +327,58 @@ vscode.window.withProgress({
   }
 
   vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    title: `Running install command in container: ${installCommand}`,
-    cancellable: false
-  }, async (progress) => {
-    return new Promise((resolve, reject) => {
-      exec(`docker exec ${containerName} sh -c "${installCommand}"`, (error, stdout, stderr) => {
-        if (error) {
-          vscode.window.showErrorMessage(`Command failed: ${stderr || error.message}`);
-          webviewView.webview.postMessage({
-            command: 'installResult',
-            success: false,
-            output: stderr || error.message
-          });
-          reject();
-        } else {
-          vscode.window.showInformationMessage('Library installed successfully!');
+  location: vscode.ProgressLocation.Notification,
+  title: `Running install command in container: ${installCommand}`,
+  cancellable: false
+}, async (progress) => {
+  return new Promise((resolve, reject) => {
+    exec(`docker exec ${containerName} sh -c "${installCommand}"`, (error, stdout, stderr) => {
+      if (error) {
+        vscode.window.showErrorMessage(`Command failed: ${stderr || error.message}`);
+        webviewView.webview.postMessage({
+          command: 'installResult',
+          success: false,
+          output: stderr || error.message
+        });
+        reject();
+        return;
+      }
+
+      // Success message for both Node.js and Python
+      vscode.window.showInformationMessage('Library installed successfully!');
+
+      if (projectType === 'Python') {
+        // Run pip freeze inside the container
+        exec(`docker exec ${containerName} sh -c "pip freeze > requirements.txt"`, (freezeErr, freezeOut, freezeErrOut) => {
+          if (freezeErr) {
+            vscode.window.showWarningMessage('Installed, but failed to update requirements.txt');
+            console.error(freezeErrOut || freezeErr.message);
+          } else {
+            vscode.window.showInformationMessage('requirements.txt updated.');
+          }
+
           webviewView.webview.postMessage({
             command: 'installResult',
             success: true,
             output: stdout
           });
+
           resolve();
-        }
-      });
+        });
+      } else {
+        // Node.js or other case
+        webviewView.webview.postMessage({
+          command: 'installResult',
+          success: true,
+          output: stdout
+        });
+
+        resolve();
+      }
     });
   });
+});
+
 }
 
 else if (message.command === 'stop_container') {
