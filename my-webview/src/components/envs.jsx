@@ -20,6 +20,8 @@ function Form({envs}){
 
     return (
   <div className="form-container">
+
+       <h1>ENTER ENVIRONMENT VARIABLES</h1>
     {[...envs].map((index, value) => {
       return (
         <div className="input-wrapper" key={value}>
@@ -46,7 +48,7 @@ function Form({envs}){
         });
       }}
     >
-      CLICK
+      BUILD
     </button>
   </div>
 );
