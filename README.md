@@ -17,10 +17,10 @@ Unlike traditional setups, **DOCKaroo** skips the clutter and lets you mount you
 - 👨‍💻 Best suited for development and live experimentation with Python or Node.js  
 - 📌 Ideal for users who want dev container-like functionality without heavy configs
 
-### Screenshots
+### Demo
 
-![Main Interface](images/main-interface.png)  
-![Running a Container](images/container-run.png)
+![DOCKaroo Demo](https://res.cloudinary.com/dp71rx6nx/image/upload/v1750739915/DOCKaroo_demo.gif)
+
 
 ---
 
