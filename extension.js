@@ -12,6 +12,15 @@ const path = require('path');
 /**
  * @param {vscode.ExtensionContext} context
  */
+
+let containerName = '';
+  let envVarNames = [];
+  let selectedFolderPath = '';
+  let i = 1;
+  let ui_status = -1;
+  let projectType = '';
+  let imageName='';
+  let volumeName = '';
 function activate(context) {
 
     
@@ -31,12 +40,7 @@ function activate(context) {
   webviewView.webview.html = getHtml(webviewView.webview, context);
 
 
-   let containerName = '';
-  let envVarNames = [];
-  let selectedFolderPath = '';
-  let i = 1;
-  let ui_status = -1;
-  let projectType = '';
+   
   //console.log(ui_status);
 
   
@@ -128,7 +132,7 @@ if (!folderPath) {
   return;
 }
 
-const imageName = path.basename(folderPath); // Use folder name as image name
+imageName = path.basename(folderPath); // Use folder name as image name
 
 
 
@@ -231,7 +235,7 @@ vscode.window.withProgress({
 
         if (projectType === 'Node.js') {
           // Prompt volume name for node_modules
-          const volumeName = await vscode.window.showInputBox({
+          volumeName = await vscode.window.showInputBox({
             prompt: 'Enter a Docker volume name for node_modules',
             ignoreFocusOut: true,
             placeHolder: 'my_node_modules_volume',
@@ -482,7 +486,48 @@ else if (message.command === 'run_container') {
 }
 
 // This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() {
+  if (!containerName) {
+    console.log('No container to remove on deactivate.');
+    return;
+  }
+
+  console.log(`Cleaning up container '${containerName}', image '${imageName}'...`);
+
+  // Stop and remove the container
+  exec(`docker rm -f ${containerName}`, (err1, stdout1, stderr1) => {
+    if (err1) {
+      console.error(`Failed to remove container '${containerName}': ${stderr1 || err1.message}`);
+    } else {
+      console.log(`Container '${containerName}' removed successfully.`);
+    }
+  });
+
+  // Remove the image
+  if (imageName) {
+    exec(`docker rmi -f ${imageName}`, (err2, stdout2, stderr2) => {
+      if (err2) {
+        console.error(`Failed to remove image '${imageName}': ${stderr2 || err2.message}`);
+      } else {
+        console.log(`Image '${imageName}' removed successfully.`);
+      }
+    });
+  }
+
+  // Remove the node_modules volume if it's a Node.js project
+  if (projectType === 'Node.js') {
+    // Derive volume name used (rebuild it if needed — from UI or logic)
+    const volumeGuess = volumeName; // Or however you built it in the install step
+    exec(`docker volume rm ${volumeGuess}`, (err3, stdout3, stderr3) => {
+      if (err3) {
+        console.error(`Failed to remove volume '${volumeGuess}': ${stderr3 || err3.message}`);
+      } else {
+        console.log(`Volume '${volumeGuess}' removed successfully.`);
+      }
+    });
+  }
+}
+
 
 function getHtml(webview, context) {
   const reactDist = vscode.Uri.joinPath(context.extensionUri, 'my-webview', 'dist');
