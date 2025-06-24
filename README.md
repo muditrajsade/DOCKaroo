@@ -19,7 +19,7 @@ Unlike traditional setups, **DOCKaroo** skips the clutter and lets you mount you
 
 ### Demo
 
-![DOCKaroo Demo](https://res.cloudinary.com/dp71rx6nx/image/upload/v1750739915/DOCKaroo_demo.gif)
+![DOCKaroo Demo](https://res.cloudinary.com/dp71rx6nx/image/upload/v1750740255/DOCKaroo_rr7isf.gif)
 
 
 ---
