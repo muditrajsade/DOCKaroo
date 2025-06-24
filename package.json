@@ -2,8 +2,13 @@
   "name": "DOCKaroo",
   "displayName": "Dockaroo",
   "description": "User Friendly sidekick for developing inside Docker containers",
-  "icon": "media/ship.svg",
+  "icon": "media/ship.png",
   "version": "0.0.1",
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/muditrajsade/DOCKaroo.git"
+},
+
   "publisher": "SADEMUDITRAJ",
   "preview": true,
   "galleryBanner.color": {
