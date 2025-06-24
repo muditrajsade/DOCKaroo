@@ -1,65 +1,99 @@
-# DOCKaroo README
+# 🚀 DOCKaroo – Live Container Editing, Simplified
 
-This is the README for your extension "DOCKaroo". After writing up a brief description, we recommend including the following sections.
+**DOCKaroo** is a user-friendly VS Code extension for live Docker container editing. Inspired by Microsoft's *Dev Containers*, it takes a simpler, more streamlined approach that minimizes the amount of configuration and documentation required.
 
-## Features
+Unlike traditional setups, **DOCKaroo** skips the clutter and lets you mount your project directly via Dockerfile and volume bindings—making it especially easy for quick prototyping, debugging, and testing in containerized environments.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+> 🔧 Currently optimized for **Python** and **Node.js** projects.
 
 ---
 
-## Working with Markdown
+## ✨ Features
 
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
+- 🐳 **Live container editing** via Docker volumes  
+- 🗂️ **Minimal config required** – no `devcontainer.json`, just a `Dockerfile`  
+- 📁 **Mounts local project folder** inside the container automatically  
+- ⚡ **Fast & beginner-friendly** setup for working with Docker  
+- 👨‍💻 Best suited for development and live experimentation with Python or Node.js  
+- 📌 Ideal for users who want dev container-like functionality without heavy configs
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
+### Screenshots
 
-## For more information
+![Main Interface](images/main-interface.png)  
+![Running a Container](images/container-run.png)
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+---
 
-**Enjoy!**
+## 📦 Requirements
+
+- **Docker** must be installed and running on your system  
+- Your project should contain a `Dockerfile` at the root  
+- Basic structure expected:
+project-root/
+├── Dockerfile
+└── (your code files)
+
+
+---
+
+## ⚙️ Extension Settings
+
+This extension contributes the following settings (planned):
+
+> _Note: These settings may be added in future versions._
+
+- `dockaroo.autoStart`: Automatically start container when project opens  
+- `dockaroo.defaultLanguage`: Set default language for environment boot  
+- `dockaroo.mountPath`: Define custom mount path inside container  
+
+---
+
+## 🐞 Known Issues
+
+- Currently limited to Python and Node.js environments  
+- Language detection is not automatic yet  
+- Some edge cases in volume mounting might behave inconsistently across OSes  
+- UI layout may require enhancements for large projects  
+
+---
+
+## 📌 Roadmap
+
+Planned for upcoming releases:
+
+- ✅ Auto-detect project language (Python, Node.js, etc.)  
+- ✅ Improve UI and error feedback  
+- ✅ Add support for additional languages and frameworks (e.g., Ruby, Go, Java)  
+- ✅ Custom scripts/hooks during container launch  
+- ✅ Settings UI for easier customization  
+
+---
+
+## 📝 Release Notes
+
+### 1.0.0  
+Initial release of DOCKaroo  
+- Live editing via Docker volumes  
+- Basic UI integration with VS Code  
+- Supports Python and Node.js containers  
+
+---
+
+## 📬 Bug Reports & Contact
+
+To report bugs, request features, or share feedback, please email:  
+📧 **muditrajsade89@gmail.com**
+
+---
+
+## 📚 Useful Resources
+
+- [Visual Studio Code Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers)  
+- [Docker Documentation](https://docs.docker.com/)  
+- [Markdown Syntax Guide](https://www.markdownguide.org/basic-syntax/)
+
+---
+
+**Enjoy using DOCKaroo!**  
+Making containerized dev environments easier—one Dockerfile at a time.
+
