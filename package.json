@@ -2,7 +2,14 @@
   "name": "DOCKaroo",
   "displayName": "Dockaroo",
   "description": "User Friendly sidekick for developing inside Docker containers",
+  "icon": "media/ship.svg",
   "version": "0.0.1",
+  "publisher": "SADEMUDITRAJ",
+  "preview": true,
+  "galleryBanner.color": {
+    "color" : "#21214c",
+    "theme" : "dark"
+  },
   "engines": {
     "vscode": "^1.100.0"
   },
