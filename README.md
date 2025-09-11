@@ -4,6 +4,11 @@
 
 Unlike traditional setups, **DOCKaroo** skips the clutter and lets you mount your project directly via Dockerfile and volume bindings—making it especially easy for quick prototyping, debugging, and testing in containerized environments.
 
+## 👥 **Contributors**
+
+- **Original Author**: [Mudit Raj Sade](https://github.com/muditrajsade) - Created the foundational DOCKaroo extension
+- **Enhancement Contributor**: [Aryaman](https://github.com/aryaman108) - Added v0.1.0 features including auto-detection, logs viewer, shell access, and enhanced UI
+
 > 🔧 Optimized for **Python**, **Node.js**, and **Go** projects.
 
 ---

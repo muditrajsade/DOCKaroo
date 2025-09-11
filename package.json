@@ -1,7 +1,7 @@
 {
   "name": "DOCKaroo",
   "displayName": "Dockaroo",
-  "description": "User Friendly sidekick for developing inside Docker containers",
+  "description": "Enhanced VS Code extension for live Docker container editing with auto-detection, logs viewer, and shell access. Based on the original DOCKaroo by muditrajsade.",
   "icon": "media/ship.png",
   "version": "0.1.0",
   "repository": {
