@@ -3,11 +3,11 @@
   "displayName": "Dockaroo",
   "description": "User Friendly sidekick for developing inside Docker containers",
   "icon": "media/ship.png",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "repository": {
-  "type": "git",
-  "url": "https://github.com/muditrajsade/DOCKaroo.git"
-},
+    "type": "git",
+    "url": "https://github.com/aryaman108/DOCKaroo.git"
+  },
 
   "publisher": "SADEMUDITRAJ",
   "preview": true,
@@ -22,14 +22,47 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:myView"
+    "onView:myView",
+    "onCommand:DOCKaroo.dockerize",
+    "onCommand:DOCKaroo.viewLogs",
+    "onCommand:DOCKaroo.execShell",
+    "onCommand:DOCKaroo.removeContainer"
   ],
   "main": "./extension.js",
   "contributes": {
     "commands": [{
-      "command": "DOCKaroo.helloWorld",
-      "title": "Hello World"
+      "command": "DOCKaroo.dockerize",
+      "title": "Dockerize Project"
+    }, {
+      "command": "DOCKaroo.viewLogs",
+      "title": "View Container Logs"
+    }, {
+      "command": "DOCKaroo.execShell",
+      "title": "Open Shell in Container"
+    }, {
+      "command": "DOCKaroo.removeContainer",
+      "title": "Remove Container"
     }],
+    "configuration": {
+      "title": "DOCKaroo",
+      "properties": {
+        "dockaroo.defaultHostPort": {
+          "type": "number",
+          "default": 3000,
+          "description": "Default host port for container"
+        },
+        "dockaroo.defaultContainerPort": {
+          "type": "number",
+          "default": 3000,
+          "description": "Default container port"
+        },
+        "dockaroo.autoDetectProjectType": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect project type"
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {

@@ -158,13 +158,25 @@ vscode.window.withProgress({
 
         vscode.window.showInformationMessage(`Docker image '${imageName}' built successfully!`);
 
-        // Prompt project type
-        projectType = await vscode.window.showQuickPick(['Node.js', 'Python'], {
-          placeHolder: 'Select project type'
-        });
+        // Auto-detect project type if enabled
+        const config = vscode.workspace.getConfiguration('dockaroo');
+        if (config.get('autoDetectProjectType')) {
+          projectType = detectProjectType(selectedFolderPath);
+          if (projectType !== 'Other') {
+            vscode.window.showInformationMessage(`Detected project type: ${projectType}`);
+          } else {
+            projectType = await vscode.window.showQuickPick(['Node.js', 'Python', 'Other'], {
+              placeHolder: 'Select project type'
+            });
+          }
+        } else {
+          projectType = await vscode.window.showQuickPick(['Node.js', 'Python', 'Other'], {
+            placeHolder: 'Select project type'
+          });
+        }
 
-        if (!projectType) {
-          vscode.window.showWarningMessage('No project type selected. Running container without volume mounts.');
+        if (!projectType || projectType === 'Other') {
+          vscode.window.showWarningMessage('Running container without special volume mounts.');
           runContainerBasic();
           resolve();
           return;
@@ -183,8 +195,10 @@ vscode.window.withProgress({
         }
 
         // Prompt host port
+        const defaultHostPort = config.get('defaultHostPort') || 3000;
         const hostPort = await vscode.window.showInputBox({
-          prompt: 'Enter the host port to bind (e.g., 3000)',
+          prompt: 'Enter the host port to bind',
+          value: defaultHostPort.toString(),
           validateInput: val => isNaN(val) ? 'Must be a number' : null,
           ignoreFocusOut: true
         });
@@ -196,8 +210,10 @@ vscode.window.withProgress({
         }
 
         // Prompt container port
+        const defaultContainerPort = config.get('defaultContainerPort') || 3000;
         const containerPort = await vscode.window.showInputBox({
-          prompt: 'Enter the container port to bind (e.g., 5000)',
+          prompt: 'Enter the container port to bind',
+          value: defaultContainerPort.toString(),
           validateInput: val => isNaN(val) ? 'Must be a number' : null,
           ignoreFocusOut: true
         });
@@ -470,11 +486,123 @@ else if (message.command === 'run_container') {
 }
 
 
+});
 
+// NEW FEATURES: Additional command handlers
+else if (message.command === 'viewLogs') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No container running to view logs.');
+    return;
+  }
+
+  vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: `Fetching logs for container: ${containerName}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker logs ${containerName}`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Failed to get logs: ${stderr || error.message}`);
+          reject();
+          return;
+        }
+
+        // Show logs in output channel
+        const outputChannel = vscode.window.createOutputChannel('DOCKaroo Logs');
+        outputChannel.appendLine(`Logs for container: ${containerName}`);
+        outputChannel.appendLine(stdout);
+        outputChannel.show();
+        resolve();
       });
-  
+    });
+  });
+}
+
+else if (message.command === 'execShell') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No container running to exec into.');
+    return;
+  }
+
+  // Open terminal and exec
+  const terminal = vscode.window.createTerminal(`DOCKaroo: ${containerName}`);
+  terminal.sendText(`docker exec -it ${containerName} sh`);
+  terminal.show();
+}
+
+else if (message.command === 'removeContainer') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No container to remove.');
+    return;
+  }
+
+  vscode.window.showWarningMessage(`Remove container '${containerName}'?`, 'Yes', 'No').then(selection => {
+    if (selection === 'Yes') {
+      exec(`docker rm -f ${containerName}`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Failed to remove container: ${stderr || error.message}`);
+        } else {
+          vscode.window.showInformationMessage(`Container '${containerName}' removed.`);
+          containerName = '';
+          ui_status = -1;
+          webviewView.webview.postMessage({ command: 'reset' });
+        }
+      });
     }
-  };
+  });
+}
+
+else if (message.command === 'restartContainer') {
+  if (!containerName) {
+    vscode.window.showErrorMessage('No container to restart.');
+    return;
+  }
+
+  webviewView.webview.postMessage({ command: 'showLoader' });
+
+  vscode.window.withProgress({
+    location: vscode.ProgressLocation.Notification,
+    title: `Restarting Docker container: ${containerName}`,
+    cancellable: false
+  }, async (progress) => {
+    return new Promise((resolve, reject) => {
+      exec(`docker restart ${containerName}`, (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(`Failed to restart container: ${stderr || error.message}`);
+          webviewView.webview.postMessage({ command: 'hideLoader' });
+          reject();
+          return;
+        }
+
+        vscode.window.showInformationMessage(`Container '${containerName}' restarted successfully.`);
+        ui_status = 2;
+        i = 1;
+        webviewView.webview.postMessage({ command: 'display', cont_name: containerName, v: i });
+        resolve();
+      });
+    });
+  });
+}
+
+else if (message.command === 'getContainerStatus') {
+  if (!containerName) {
+    webviewView.webview.postMessage({ command: 'containerStatus', status: 'No container' });
+    return;
+  }
+
+  exec(`docker ps --filter "name=${containerName}" --format "{{.Status}}"`, (error, stdout, stderr) => {
+    if (error) {
+      webviewView.webview.postMessage({ command: 'containerStatus', status: 'Error' });
+      return;
+    }
+
+    const status = stdout.trim() || 'Not running';
+    webviewView.webview.postMessage({ command: 'containerStatus', status: status });
+  });
+}
+}
+};
   console.log("pl");
 
   const disposable = vscode.window.registerWebviewViewProvider('myView', provider);
@@ -580,6 +708,18 @@ function extractAllEnvVarNames(dockerfileContent) {
 
 
 
+
+function detectProjectType(folderPath) {
+  const packageJsonPath = path.join(folderPath, 'package.json');
+  const requirementsPath = path.join(folderPath, 'requirements.txt');
+  const pyprojectPath = path.join(folderPath, 'pyproject.toml');
+  const goModPath = path.join(folderPath, 'go.mod');
+
+  if (fs.existsSync(packageJsonPath)) return 'Node.js';
+  if (fs.existsSync(requirementsPath) || fs.existsSync(pyprojectPath)) return 'Python';
+  if (fs.existsSync(goModPath)) return 'Go';
+  return 'Other';
+}
 
 module.exports = {
 	activate,
