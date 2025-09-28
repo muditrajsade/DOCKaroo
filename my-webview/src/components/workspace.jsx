@@ -1,9 +1,35 @@
 // @ts-nocheck
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { vscode } from "./vscode.js";
 
 function W({ containername, i }) {
   const isRunning = i === 1;
+  const [containerStatus, setContainerStatus] = useState('Checking...');
+
+  useEffect(() => {
+    // Get initial status
+    vscode.postMessage({ command: 'getContainerStatus' });
+
+    // Set up interval to check status every 5 seconds
+    const interval = setInterval(() => {
+      vscode.postMessage({ command: 'getContainerStatus' });
+    }, 5000);
+
+    // Listen for status updates
+    const handleMessage = (event) => {
+      const msg = event.data;
+      if (msg.command === 'containerStatus') {
+        setContainerStatus(msg.status);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   return (
     <div style={{
@@ -21,10 +47,19 @@ function W({ containername, i }) {
         justifyContent: 'space-between',
         marginBottom: '12px'
       }}>
-        {/* Container name */}
-        <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
-          {containername}
-        </span>
+        {/* Container name and status */}
+        <div>
+          <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
+            {containername}
+          </span>
+          <div style={{
+            fontSize: '12px',
+            color: isRunning ? '#4CAF50' : '#f44336',
+            marginTop: '2px'
+          }}>
+            Status: {containerStatus}
+          </div>
+        </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -52,6 +87,15 @@ function W({ containername, i }) {
                 ⏹️
               </button>
               <button
+                title="Restart Container"
+                style={iconButtonStyle}
+                onClick={() => {
+                  vscode.postMessage({ command: "restartContainer" });
+                }}
+              >
+                🔄
+              </button>
+              <button
                 title="Install Libraries"
                 style={iconButtonStyle}
                 onClick={() => {
@@ -60,8 +104,35 @@ function W({ containername, i }) {
               >
                 📦
               </button>
+              <button
+                title="View Logs"
+                style={iconButtonStyle}
+                onClick={() => {
+                  vscode.postMessage({ command: "viewLogs" });
+                }}
+              >
+                📄
+              </button>
+              <button
+                title="Open Shell"
+                style={iconButtonStyle}
+                onClick={() => {
+                  vscode.postMessage({ command: "execShell" });
+                }}
+              >
+                🖥️
+              </button>
             </>
           )}
+          <button
+            title="Remove Container"
+            style={iconButtonStyle}
+            onClick={() => {
+              vscode.postMessage({ command: "removeContainer" });
+            }}
+          >
+            🗑️
+          </button>
         </div>
       </div>
 

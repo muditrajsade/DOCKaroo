@@ -43,6 +43,12 @@ function App() {
         set_container_name(msg.cont_name);
         set_i(msg.v);
       }
+      if (msg.command === 'reset') {
+        set_load(0);
+        set_container_name('');
+        set_i(0);
+        set_s([]);
+      }
     };
 
     window.addEventListener('message', handleMessage);
